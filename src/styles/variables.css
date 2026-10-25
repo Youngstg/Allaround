@@ -1,0 +1,154 @@
+:root {
+  /* ==========================================================================
+     BLUE PASTEL COLOR SYSTEM (Light Mode)
+     Direction: Soft Sky, Ice Blue, Glacier, Powder Blue
+     ========================================================================== */
+  
+  /* Primary Brand: Soft Sky Blue */
+  --brand-primary: #60A5FA;
+  --brand-light: #EFF6FF;
+  --brand-dark: #1D4ED8;
+  --brand-border: #BFDBFE;
+
+  /* Category 1: PDF Tools (Glacier Ice Blue) */
+  --cat-pdf-primary: #7DD3FC;
+  --cat-pdf-light: #F0F9FF;
+  --cat-pdf-dark: #0369A1;
+  --cat-pdf-border: #BAE6FD;
+
+  /* Category 2: Image Tools (Sky Blue Pastel) */
+  --cat-img-primary: #93C5FD;
+  --cat-img-light: #EFF6FF;
+  --cat-img-dark: #2563EB;
+  --cat-img-border: #BFDBFE;
+
+  /* Category 3: Text Tools (Ice Teal / Aqua Mint) */
+  --cat-txt-primary: #6EE7B7;
+  --cat-txt-light: #F0FDF4;
+  --cat-txt-dark: #047857;
+  --cat-txt-border: #A7F3D0;
+
+  /* Category 4: Converter Tools (Periwinkle Ice Blue) */
+  --cat-conv-primary: #A5B4FC;
+  --cat-conv-light: #EEF2FF;
+  --cat-conv-dark: #4338CA;
+  --cat-conv-border: #C7D2FE;
+
+  /* Category 5: Generator Tools (Ocean Azure) */
+  --cat-gen-primary: #38BDF8;
+  --cat-gen-light: #F0F9FF;
+  --cat-gen-dark: #0284C7;
+  --cat-gen-border: #BAE6FD;
+
+  /* Category 6: Utility Tools (Soft Slate Blue) */
+  --cat-util-primary: #94A3B8;
+  --cat-util-light: #F8FAFC;
+  --cat-util-dark: #334155;
+  --cat-util-border: #CBD5E1;
+
+  /* Neutrals (Light Mode - Cool Slate & Ice) */
+  --color-bg-base: #F8FAFC;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-sidebar: #F1F5F9;
+  --color-bg-card: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-border-hover: #93C5FD;
+  --color-input-bg: #FFFFFF;
+  
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94A3B8;
+  --color-white: #FFFFFF;
+  --color-black: #0F172A;
+
+  /* Hero Gradient (Fresh Soft Pastel Sky Blue) */
+  --hero-gradient: linear-gradient(135deg, #E0F2FE 0%, #EFF6FF 50%, #F0FDF4 100%);
+  --hero-badge-bg: rgba(255, 255, 255, 0.9);
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 8px 30px rgba(56, 189, 248, 0.12);
+  --shadow-glow: 0 0 24px rgba(96, 165, 250, 0.3);
+
+  /* Typography */
+  --font-heading: 'Outfit', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Logo filter */
+  --logo-filter: none;
+}
+
+/* ==========================================================================
+   BLUE PASTEL DARK MODE (Deep Midnight Navy & Luminescent Sky)
+   ========================================================================== */
+[data-theme="dark"] {
+  --color-bg-base: #0A0F1D;
+  --color-bg-surface: #111827;
+  --color-bg-sidebar: #0D1424;
+  --color-bg-card: #111827;
+  --color-border: #1E293B;
+  --color-border-hover: #38BDF8;
+  --color-input-bg: #162032;
+
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted: #64748B;
+
+  /* Luminescent Blue Pastel Accents in Dark Mode */
+  --brand-primary: #60A5FA;
+  --brand-light: rgba(96, 165, 250, 0.12);
+  --brand-dark: #93C5FD;
+  --brand-border: rgba(96, 165, 250, 0.24);
+
+  --cat-pdf-primary: #7DD3FC;
+  --cat-pdf-light: rgba(125, 211, 252, 0.12);
+  --cat-pdf-dark: #BAE6FD;
+  --cat-pdf-border: rgba(125, 211, 252, 0.24);
+
+  --cat-img-primary: #93C5FD;
+  --cat-img-light: rgba(147, 197, 253, 0.12);
+  --cat-img-dark: #BFDBFE;
+  --cat-img-border: rgba(147, 197, 253, 0.24);
+
+  --cat-txt-primary: #6EE7B7;
+  --cat-txt-light: rgba(110, 231, 183, 0.12);
+  --cat-txt-dark: #A7F3D0;
+  --cat-txt-border: rgba(110, 231, 183, 0.24);
+
+  --cat-conv-primary: #A5B4FC;
+  --cat-conv-light: rgba(165, 180, 252, 0.12);
+  --cat-conv-dark: #C7D2FE;
+  --cat-conv-border: rgba(165, 180, 252, 0.24);
+
+  --cat-gen-primary: #38BDF8;
+  --cat-gen-light: rgba(56, 189, 248, 0.12);
+  --cat-gen-dark: #BAE6FD;
+  --cat-gen-border: rgba(56, 189, 248, 0.24);
+
+  --cat-util-primary: #94A3B8;
+  --cat-util-light: rgba(148, 163, 184, 0.12);
+  --cat-util-dark: #E2E8F0;
+  --cat-util-border: rgba(148, 163, 184, 0.24);
+
+  --hero-gradient: linear-gradient(135deg, #0F172A 0%, #172554 50%, #0C4A6E 100%);
+  --hero-badge-bg: rgba(17, 24, 39, 0.85);
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.6);
+
+  --logo-filter: invert(1) brightness(1.2);
+}
