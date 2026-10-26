@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Moon, Sun, ArrowLeft, Info } from 'lucide-react';
+import { Shield, Moon, Sun, ArrowLeft, Info, Menu } from 'lucide-react';
 import { TOOLS } from '../../data/tools';
 
 interface TopbarProps {
@@ -7,6 +7,7 @@ interface TopbarProps {
   onSelectTool: (id: string | null) => void;
   isDark: boolean;
   onToggleTheme: () => void;
+  onOpenMobile?: () => void;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({
@@ -14,6 +15,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   onSelectTool,
   isDark,
   onToggleTheme,
+  onOpenMobile,
 }) => {
   const [showPrivacyTooltip, setShowPrivacyTooltip] = useState(false);
   const currentTool = TOOLS.find(t => t.id === activeToolId);
@@ -26,13 +28,31 @@ export const Topbar: React.FC<TopbarProps> = ({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '0 32px',
+      padding: '0 clamp(12px, 2.5vw, 28px)',
       position: 'sticky',
       top: 0,
       zIndex: 30,
       backdropFilter: 'blur(10px)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Mobile Hamburger Toggle */}
+        {onOpenMobile && (
+          <button
+            onClick={onOpenMobile}
+            className="touch-target-btn mobile-menu-btn"
+            style={{
+              background: 'var(--color-bg-base)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+              color: 'var(--color-text-primary)',
+              cursor: 'pointer',
+            }}
+            aria-label="Buka Menu Navigasi"
+          >
+            <Menu size={20} />
+          </button>
+        )}
+
         {/* Back / Breadcrumb */}
         {currentTool ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -158,24 +178,23 @@ export const Topbar: React.FC<TopbarProps> = ({
           )}
         </div>
 
-        {/* Theme Toggle Button */}
+        {/* Theme Toggle Button (Touch Target >= 44x44px) */}
         <button
           onClick={onToggleTheme}
+          className="touch-target-btn"
           title={isDark ? "Beralih ke Mode Terang" : "Beralih ke Mode Gelap"}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '36px',
-            height: '36px',
+            width: '44px',
+            height: '44px',
             borderRadius: '50%',
             border: '1px solid var(--color-border)',
             background: 'var(--color-bg-surface)',
             cursor: 'pointer',
             transition: 'all var(--transition-fast)',
           }}
+          aria-label={isDark ? "Beralih ke Mode Terang" : "Beralih ke Mode Gelap"}
         >
-          {isDark ? <Sun size={16} color="#FBBF24" /> : <Moon size={16} color="var(--color-text-secondary)" />}
+          {isDark ? <Sun size={18} color="#FBBF24" /> : <Moon size={18} color="var(--color-text-secondary)" />}
         </button>
       </div>
     </header>

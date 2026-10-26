@@ -116,7 +116,7 @@ export const PdfCompressorTool: React.FC = () => {
           <Sparkles size={15} />
           <span>Solusi Kompresi CV dan Dokumen Kerja</span>
         </div>
-        <h1 style={{ fontSize: '32px', fontWeight: 800, marginBottom: '8px', fontFamily: 'var(--font-heading)', color: 'var(--color-text-primary)' }}>
+        <h1 style={{ fontSize: 'clamp(1.5rem, 3.5vw, 2rem)', fontWeight: 800, marginBottom: '8px', fontFamily: 'var(--font-heading)', color: 'var(--color-text-primary)' }}>
           PDF Compressor
         </h1>
         <p style={{ color: 'var(--color-text-secondary)', fontSize: '15px' }}>
@@ -293,7 +293,7 @@ export const PdfCompressorTool: React.FC = () => {
             <span>Kompresi Berhasil Dilakukan</span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', textAlign: 'center', marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '14px', textAlign: 'center', marginBottom: '20px' }}>
             <div style={{ background: 'var(--color-bg-surface)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
               <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>Ukuran Asli</div>
               <div style={{ fontSize: '17px', fontWeight: 800, color: 'var(--color-text-primary)', marginTop: '4px' }}>

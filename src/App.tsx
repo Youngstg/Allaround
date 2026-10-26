@@ -120,6 +120,7 @@ export const App: React.FC = () => {
           onSelectTool={(id) => setActiveToolId(id)}
           isDark={isDark}
           onToggleTheme={() => setIsDark(prev => !prev)}
+          onOpenMobile={() => setIsMobileOpen(true)}
         />
 
         <main className="content-area">

@@ -58,7 +58,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectTool }) => {
       <div style={{
         background: 'var(--hero-gradient)',
         borderRadius: 'var(--radius-lg)',
-        padding: '36px 32px',
+        padding: 'clamp(20px, 4vw, 36px) clamp(16px, 4vw, 32px)',
         border: '1px solid var(--color-border)',
         marginBottom: '32px',
         position: 'relative',
@@ -84,7 +84,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectTool }) => {
           </div>
 
           <h1 style={{
-            fontSize: '32px',
+            fontSize: 'clamp(1.5rem, 4vw, 2.25rem)',
             fontWeight: 800,
             color: 'var(--color-text-primary)',
             letterSpacing: '-0.02em',
@@ -95,7 +95,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectTool }) => {
           </h1>
 
           <p style={{
-            fontSize: '14px',
+            fontSize: 'clamp(13px, 1.5vw, 15px)',
             color: 'var(--color-text-secondary)',
             marginBottom: '20px',
             lineHeight: 1.6,
@@ -147,10 +147,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectTool }) => {
         overflowX: 'auto',
         paddingBottom: '16px',
         marginBottom: '24px',
+        WebkitOverflowScrolling: 'touch',
       }}>
         <button
           onClick={() => setSelectedCategory('all')}
           style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '44px',
             padding: '8px 18px',
             borderRadius: 'var(--radius-full)',
             border: selectedCategory === 'all' ? '2px solid var(--cat-img-dark)' : '1px solid var(--color-border)',
@@ -173,9 +178,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectTool }) => {
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
               style={{
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
+                minHeight: '44px',
                 padding: '8px 18px',
                 borderRadius: 'var(--radius-full)',
                 border: isSelected ? `2px solid ${cat.darkColor}` : '1px solid var(--color-border)',
@@ -203,7 +209,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectTool }) => {
       {/* Tool Cards Grid */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
         gap: '20px',
       }}>
         {filteredTools.map(tool => {

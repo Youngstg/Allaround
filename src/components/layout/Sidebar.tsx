@@ -4,7 +4,7 @@ import {
   ChevronDown, ChevronRight, Layers, Minimize2, Wand2, 
   Scaling, CaseSensitive, QrCode, KeyRound, Palette, Search,
   Home, Calculator, GitCompare, FileImage, FileEdit, ShieldCheck,
-  FileCode
+  FileCode, X
 } from 'lucide-react';
 import { CATEGORIES, TOOLS } from '../../data/tools';
 
@@ -82,18 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
 
-      <aside style={{
-        width: '270px',
-        backgroundColor: 'var(--color-bg-sidebar)',
-        borderRight: '1px solid var(--color-border)',
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100vh',
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-        boxShadow: '4px 0 24px rgba(0, 0, 0, 0.04)',
-      }}>
+      <aside className={`sidebar-aside ${isMobileOpen ? 'is-open' : ''}`}>
         {/* Logo Header with Comma Hair Guy Face Icon */}
         <div style={{
           padding: '20px 20px 16px',
@@ -154,6 +143,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Close button for mobile screens */}
+          <button
+            onClick={onCloseMobile}
+            className="touch-target-btn mobile-close-btn"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--color-text-secondary)',
+              borderRadius: 'var(--radius-sm)',
+            }}
+            aria-label="Tutup Menu"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         {/* Search Bar */}
