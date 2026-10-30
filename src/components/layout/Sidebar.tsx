@@ -83,13 +83,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside className={`sidebar-aside ${isMobileOpen ? 'is-open' : ''}`}>
-        {/* Logo Header with Comma Hair Guy Face Icon */}
+        {/* Logo Header with Brand Emblem */}
         <div style={{
           padding: '20px 20px 16px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           borderBottom: '1px solid var(--color-border)',
+          flexShrink: 0,
         }}>
           <div 
             onClick={() => { onSelectTool(null); onCloseMobile(); }}
@@ -101,28 +102,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
               userSelect: 'none'
             }}
           >
-            {/* Minimalist Comma Hair Icon */}
+            {/* AllAround App Logo Icon */}
             <div style={{
-              width: '42px',
-              height: '42px',
+              width: '40px',
+              height: '40px',
               borderRadius: '12px',
-              border: '1.5px solid var(--color-border)',
-              background: 'var(--color-bg-surface)',
+              border: '1px solid var(--color-border)',
+              background: '#0B0F19',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               overflow: 'hidden',
-              boxShadow: 'var(--shadow-sm)',
+              boxShadow: '0 4px 12px rgba(56, 189, 248, 0.18)',
+              flexShrink: 0,
             }}>
               <img 
-                src="/logo.jpg" 
+                src="/logo.webp" 
                 alt="AllAround Logo" 
                 style={{
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
-                  filter: 'var(--logo-filter)',
-                  mixBlendMode: 'luminosity',
                 }}
               />
             </div>
@@ -162,7 +162,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Search Bar */}
-        <div style={{ padding: '14px 16px 8px' }}>
+        <div style={{ padding: '14px 16px 8px', flexShrink: 0 }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
