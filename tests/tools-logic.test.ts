@@ -17,8 +17,11 @@ import {
   estimateSpeakingTime,
   processDuplicateLines,
   hexToRgb,
+  rgbToHex,
   rgbToHsl,
   parseTargetColor,
+  detectCornerColor,
+  processBackgroundRemoval,
   parseToDec,
   formatBinary,
   calculateBinary,
@@ -175,6 +178,192 @@ describe('4. Color Conversion & Parsing Functions', () => {
 
     const transparent = parseTargetColor('transparent');
     expect(transparent).toEqual({ r: 255, g: 255, b: 255, a: 0 });
+  });
+
+  it('converts rgb to hex correctly', () => {
+    expect(rgbToHex(255, 255, 255)).toBe('#FFFFFF');
+    expect(rgbToHex(0, 0, 0)).toBe('#000000');
+    expect(rgbToHex(246, 161, 192)).toBe('#F6A1C0');
+  });
+
+  it('detects corner colors correctly', () => {
+    // 2x2 image, RGBA
+    const data = new Uint8ClampedArray([
+      255, 0, 0, 255,   255, 0, 0, 255,
+      255, 0, 0, 255,   255, 0, 0, 255,
+    ]);
+    const corner = detectCornerColor(data, 2, 2);
+    expect(corner).toEqual({ r: 255, g: 0, b: 0 });
+  });
+
+  it('removes target color globally without affecting other colors (e.g. removes white, preserves pink)', () => {
+    // 2 pixels: pixel 0 is white (255,255,255,255), pixel 1 is pink (246,161,192,255)
+    const data = new Uint8ClampedArray([
+      255, 255, 255, 255,
+      246, 161, 192, 255,
+    ]);
+
+    processBackgroundRemoval(data, 2, 1, {
+      targetColor: { r: 255, g: 255, b: 255 },
+      tolerance: 25,
+      feather: 0,
+      mode: 'global',
+    });
+
+    // Pixel 0 should become transparent (alpha = 0)
+    expect(data[3]).toBe(0);
+    // Pixel 1 (pink) should remain opaque (alpha = 255) and pink
+    expect(data[4]).toBe(246);
+    expect(data[5]).toBe(161);
+    expect(data[6]).toBe(192);
+    expect(data[7]).toBe(255);
+  });
+
+  it('removes target color via flood fill connected area', () => {
+    // 3 pixels: [white, pink, white]
+    const data = new Uint8ClampedArray([
+      255, 255, 255, 255,
+      246, 161, 192, 255,
+      255, 255, 255, 255,
+    ]);
+
+    processBackgroundRemoval(data, 3, 1, {
+      targetColor: { r: 255, g: 255, b: 255 },
+      tolerance: 20,
+      feather: 0,
+      mode: 'floodFill',
+      startX: 0,
+      startY: 0,
+    });
+
+    // Pixel 0 (connected white) -> transparent
+    expect(data[3]).toBe(0);
+    // Pixel 1 (pink wall) -> preserved
+    expect(data[7]).toBe(255);
+    // Pixel 2 (disconnected white) -> preserved in floodFill!
+    expect(data[11]).toBe(255);
+  });
+
+  it('preserves small white line details and only removes large frames in framesOnly mode', () => {
+    // 6 pixels wide:
+    // [W, W, W, W] (component size = 4: large photo frame)
+    // [P] (pink divider)
+    // [W] (single white pixel: design line / sparkle detail)
+    const data = new Uint8ClampedArray([
+      255, 255, 255, 255, // Pixel 0 (frame)
+      255, 255, 255, 255, // Pixel 1 (frame)
+      255, 255, 255, 255, // Pixel 2 (frame)
+      255, 255, 255, 255, // Pixel 3 (frame)
+      246, 161, 192, 255, // Pixel 4 (pink divider)
+      255, 255, 255, 255, // Pixel 5 (small white line / detail)
+    ]);
+
+    processBackgroundRemoval(data, 6, 1, {
+      targetColor: { r: 255, g: 255, b: 255 },
+      tolerance: 20,
+      feather: 0,
+      mode: 'framesOnly',
+      minRegionSize: 3, // only components >= 3 pixels are removed
+    });
+
+    // Pixels 0-3 (large photo frame >= 3 pixels) should become transparent
+    expect(data[3]).toBe(0);
+    expect(data[7]).toBe(0);
+    expect(data[11]).toBe(0);
+    expect(data[15]).toBe(0);
+
+    // Pixel 4 (pink divider) is untouched
+    expect(data[19]).toBe(255);
+
+    // Pixel 5 (small white line / detail < 3 pixels) MUST BE PRESERVED!
+    expect(data[20]).toBe(255);
+    expect(data[21]).toBe(255);
+    expect(data[22]).toBe(255);
+    expect(data[23]).toBe(255); // Alpha is 255 (opaque)!
+  });
+
+  it('supports multi-click floodFill removing multiple selected boxes', () => {
+    // 5 pixels: [W, P, W, P, W]
+    const data = new Uint8ClampedArray([
+      255, 255, 255, 255, // 0: Box 1
+      246, 161, 192, 255, // 1: Divider
+      255, 255, 255, 255, // 2: Box 2
+      246, 161, 192, 255, // 3: Divider
+      255, 255, 255, 255, // 4: Box 3
+    ]);
+
+    // Click on Box 1 (x=0) and Box 3 (x=4)
+    processBackgroundRemoval(data, 5, 1, {
+      targetColor: { r: 255, g: 255, b: 255 },
+      tolerance: 20,
+      feather: 0,
+      mode: 'floodFill',
+      clickPoints: [{ x: 0, y: 0 }, { x: 4, y: 0 }],
+    });
+
+    // Box 1 and Box 3 transparent
+    expect(data[3]).toBe(0);
+    expect(data[19]).toBe(0);
+
+    // Box 2 (unclicked) remains white & opaque!
+    expect(data[11]).toBe(255);
+    // Dividers remain intact
+    expect(data[7]).toBe(255);
+    expect(data[15]).toBe(255);
+  });
+
+  it('strictly isolates and removes only top K frames in photoboothFrames mode', () => {
+    // 12x12 grid with two 4x4 blocks and a thin 1-pixel line
+    const w = 12;
+    const h = 12;
+    const data = new Uint8ClampedArray(w * h * 4);
+    // Background is dark blue (0, 0, 50, 255)
+    for (let i = 0; i < w * h * 4; i += 4) {
+      data[i] = 0; data[i + 1] = 0; data[i + 2] = 50; data[i + 3] = 255;
+    }
+
+    // Box 1: 4x4 white at (1, 1)
+    for (let y = 1; y <= 4; y++) {
+      for (let x = 1; x <= 4; x++) {
+        const idx = (y * w + x) * 4;
+        data[idx] = 255; data[idx + 1] = 255; data[idx + 2] = 255;
+      }
+    }
+
+    // Box 2: 4x4 white at (7, 7)
+    for (let y = 7; y <= 10; y++) {
+      for (let x = 7; x <= 10; x++) {
+        const idx = (y * w + x) * 4;
+        data[idx] = 255; data[idx + 1] = 255; data[idx + 2] = 255;
+      }
+    }
+
+    // Thin white line: 1x4 white at (1, 8)
+    for (let x = 1; x <= 4; x++) {
+      const idx = (8 * w + x) * 4;
+      data[idx] = 255; data[idx + 1] = 255; data[idx + 2] = 255;
+    }
+
+    processBackgroundRemoval(data, w, h, {
+      targetColor: { r: 255, g: 255, b: 255 },
+      tolerance: 20,
+      feather: 0,
+      mode: 'photoboothFrames',
+      targetFrameCount: 2,
+    });
+
+    // Both boxes should have been targeted
+    // Center of Box 1 (2, 2)
+    const b1Center = (2 * w + 2) * 4;
+    expect(data[b1Center + 3]).toBe(0);
+
+    // Center of Box 2 (8, 8)
+    const b2Center = (8 * w + 8) * 4;
+    expect(data[b2Center + 3]).toBe(0);
+
+    // Thin line at (8, 2) must remain intact!
+    const linePix = (8 * w + 2) * 4;
+    expect(data[linePix + 3]).toBe(255);
   });
 });
 

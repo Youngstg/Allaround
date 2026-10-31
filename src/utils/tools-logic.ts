@@ -193,12 +193,548 @@ export const rgbToHsl = (r: number, g: number, b: number): string => {
   return `hsl(${Math.round(h * 360)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%)`;
 };
 
+export const rgbToHex = (r: number, g: number, b: number): string => {
+  const toHex = (n: number) => Math.min(255, Math.max(0, Math.round(n))).toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+};
+
 export const parseTargetColor = (colorStr: string): { r: number; g: number; b: number; a: number } => {
   if (colorStr === 'transparent') {
     return { r: 255, g: 255, b: 255, a: 0 };
   }
   const rgb = hexToRgb(colorStr);
   return { r: rgb.r, g: rgb.g, b: rgb.b, a: 255 };
+};
+
+export const detectCornerColor = (
+  data: Uint8ClampedArray | number[],
+  width: number,
+  height: number
+): RGB => {
+  if (width <= 0 || height <= 0 || data.length < 4) {
+    return { r: 255, g: 255, b: 255 };
+  }
+  const corners = [
+    0,
+    (width - 1) * 4,
+    ((height - 1) * width) * 4,
+    ((height - 1) * width + (width - 1)) * 4,
+  ];
+  let sumR = 0;
+  let sumG = 0;
+  let sumB = 0;
+  let validCount = 0;
+
+  for (const offset of corners) {
+    if (offset + 2 < data.length) {
+      sumR += data[offset];
+      sumG += data[offset + 1];
+      sumB += data[offset + 2];
+      validCount++;
+    }
+  }
+
+  if (validCount === 0) return { r: 255, g: 255, b: 255 };
+  return {
+    r: Math.round(sumR / validCount),
+    g: Math.round(sumG / validCount),
+    b: Math.round(sumB / validCount),
+  };
+};
+
+export type RemovalMode = 'photoboothFrames' | 'framesOnly' | 'floodFill' | 'global';
+
+export interface BackgroundRemovalOptions {
+  targetColor: RGB;
+  tolerance: number;
+  feather?: number;
+  replacementColor?: { r: number; g: number; b: number; a: number };
+  mode?: RemovalMode;
+  targetFrameCount?: number;
+  minRegionSize?: number;
+  startX?: number;
+  startY?: number;
+  clickPoints?: Array<{ x: number; y: number }>;
+}
+
+export const binaryErode = (src: Uint8Array, width: number, height: number): Uint8Array => {
+  const dst = new Uint8Array(width * height);
+  for (let y = 0; y < height; y++) {
+    const row = y * width;
+    for (let x = 0; x < width; x++) {
+      const idx = row + x;
+      if (src[idx] !== 1) continue;
+      const left = x > 0 ? src[idx - 1] : 0;
+      const right = x < width - 1 ? src[idx + 1] : 0;
+      const up = y > 0 ? src[idx - width] : 0;
+      const down = y < height - 1 ? src[idx + width] : 0;
+      if (left === 1 && right === 1 && up === 1 && down === 1) {
+        dst[idx] = 1;
+      }
+    }
+  }
+  return dst;
+};
+
+export const binaryDilate = (
+  src: Uint8Array,
+  width: number,
+  height: number,
+  mask?: Uint8Array
+): Uint8Array => {
+  const dst = new Uint8Array(width * height);
+  for (let y = 0; y < height; y++) {
+    const row = y * width;
+    for (let x = 0; x < width; x++) {
+      const idx = row + x;
+      if (src[idx] === 1) {
+        dst[idx] = 1;
+        if (x > 0) dst[idx - 1] = 1;
+        if (x < width - 1) dst[idx + 1] = 1;
+        if (y > 0) dst[idx - width] = 1;
+        if (y < height - 1) dst[idx + width] = 1;
+      }
+    }
+  }
+  if (mask) {
+    for (let i = 0; i < width * height; i++) {
+      if (dst[i] === 1 && mask[i] !== 1) {
+        dst[i] = 0;
+      }
+    }
+  }
+  return dst;
+};
+
+export const processBackgroundRemoval = (
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+  options: BackgroundRemovalOptions
+): void => {
+  const {
+    targetColor,
+    tolerance,
+    feather = 8,
+    replacementColor = { r: 0, g: 0, b: 0, a: 0 },
+    mode = 'photoboothFrames',
+    targetFrameCount = 3,
+    minRegionSize = Math.max(200, Math.round(width * height * 0.005)),
+    clickPoints = [],
+  } = options;
+
+  const targetR = targetColor.r;
+  const targetG = targetColor.g;
+  const targetB = targetColor.b;
+
+  const tol = Math.max(1, tolerance);
+  const tolSq = tol * tol * 3;
+  const featherVal = Math.max(0, feather);
+  const replaceR = replacementColor.r;
+  const replaceG = replacementColor.g;
+  const replaceB = replacementColor.b;
+  const replaceA = replacementColor.a;
+
+  const n = width * height;
+
+  if (mode === 'photoboothFrames') {
+    // Advanced Photobooth Algorithm: Morphological Bridge-Severing + Top-K Frame Extraction
+    const initialMask = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+      const idx = i * 4;
+      const r = data[idx];
+      const g = data[idx + 1];
+      const b = data[idx + 2];
+      if ((r - targetR) ** 2 + (g - targetG) ** 2 + (b - targetB) ** 2 <= tolSq) {
+        initialMask[i] = 1;
+      }
+    }
+
+    // 1. Erode adaptively (up to 4 times) to sever all narrow sticker necks/bridges and erase thin grid lines
+    const numErode = Math.min(4, Math.max(1, Math.floor(Math.min(width, height) / 80)));
+    let eroded: Uint8Array = initialMask;
+    for (let it = 0; it < numErode; it++) {
+      eroded = binaryErode(eroded, width, height);
+    }
+
+    // 2. Label components on eroded cores
+    const labels = new Int32Array(n);
+    const queue = new Int32Array(n);
+    const compSizes = new Map<number, number>();
+    let currLabel = 1;
+
+    for (let i = 0; i < n; i++) {
+      if (eroded[i] !== 1 || labels[i] !== 0) continue;
+
+      let head = 0;
+      let tail = 0;
+      queue[tail++] = i;
+      labels[i] = currLabel;
+      let sz = 0;
+
+      while (head < tail) {
+        const pos = queue[head++];
+        sz++;
+        const cx = pos % width;
+        const cy = Math.floor(pos / width);
+
+        if (cx > 0) {
+          const np = pos - 1;
+          if (eroded[np] === 1 && labels[np] === 0) {
+            labels[np] = currLabel;
+            queue[tail++] = np;
+          }
+        }
+        if (cx < width - 1) {
+          const np = pos + 1;
+          if (eroded[np] === 1 && labels[np] === 0) {
+            labels[np] = currLabel;
+            queue[tail++] = np;
+          }
+        }
+        if (cy > 0) {
+          const np = pos - width;
+          if (eroded[np] === 1 && labels[np] === 0) {
+            labels[np] = currLabel;
+            queue[tail++] = np;
+          }
+        }
+        if (cy < height - 1) {
+          const np = pos + width;
+          if (eroded[np] === 1 && labels[np] === 0) {
+            labels[np] = currLabel;
+            queue[tail++] = np;
+          }
+        }
+      }
+
+      compSizes.set(currLabel, sz);
+      currLabel++;
+    }
+
+    // 3. Take strictly the top K largest photo frames (e.g. 3 boxes)
+    const k = Math.max(1, targetFrameCount);
+    const minThreshold = Math.max(1, Math.round(n * 0.001));
+    const sortedComps = Array.from(compSizes.entries())
+      .filter(([, sz]) => sz >= minThreshold)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, k);
+
+    const targetLabels = new Set(sortedComps.map(([lbl]) => lbl));
+
+    let coreMask: Uint8Array = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+      if (targetLabels.has(labels[i])) {
+        coreMask[i] = 1;
+      }
+    }
+
+    // 4. Dilate adaptively bounded by initialMask to restore original rounded rectangle edges
+    for (let it = 0; it < numErode; it++) {
+      coreMask = binaryDilate(coreMask, width, height, initialMask);
+    }
+
+    // 5. Apply replacement color to ONLY the 3 frames
+    for (let i = 0; i < n; i++) {
+      if (coreMask[i] === 1) {
+        const idx = i * 4;
+        data[idx] = replaceR;
+        data[idx + 1] = replaceG;
+        data[idx + 2] = replaceB;
+        data[idx + 3] = replaceA;
+      }
+    }
+
+    // 6. Feather outer boundary of the 3 frames
+    if (featherVal > 0) {
+      const maxFeatherDist = tol + featherVal;
+      for (let i = 0; i < n; i++) {
+        if (coreMask[i] === 1) continue;
+        const cx = i % width;
+        const cy = Math.floor(i / width);
+
+        const hasNeighbor =
+          (cx > 0 && coreMask[i - 1] === 1) ||
+          (cx < width - 1 && coreMask[i + 1] === 1) ||
+          (cy > 0 && coreMask[i - width] === 1) ||
+          (cy < height - 1 && coreMask[i + width] === 1);
+
+        if (hasNeighbor) {
+          const idx = i * 4;
+          const r = data[idx];
+          const g = data[idx + 1];
+          const b = data[idx + 2];
+          const dist = Math.sqrt((r - targetR) ** 2 + (g - targetG) ** 2 + (b - targetB) ** 2);
+          if (dist > tol && dist <= maxFeatherDist) {
+            const factor = (dist - tol) / featherVal;
+            if (replaceA === 0) {
+              data[idx + 3] = Math.round(data[idx + 3] * factor);
+            } else {
+              data[idx] = Math.round(replaceR * (1 - factor) + data[idx] * factor);
+              data[idx + 1] = Math.round(replaceG * (1 - factor) + data[idx + 1] * factor);
+              data[idx + 2] = Math.round(replaceB * (1 - factor) + data[idx + 2] * factor);
+              data[idx + 3] = Math.round(replaceA * (1 - factor) + data[idx + 3] * factor);
+            }
+          }
+        }
+      }
+    }
+
+  } else if (mode === 'framesOnly') {
+    // Connected component labeling to isolate large frames from line art & details
+    const labels = new Int32Array(n);
+    const queue = new Int32Array(n);
+    const compSizes = new Map<number, number>();
+    let currLabel = 1;
+
+    for (let i = 0; i < n; i++) {
+      if (labels[i] !== 0) continue;
+      const idx = i * 4;
+      const r = data[idx];
+      const g = data[idx + 1];
+      const b = data[idx + 2];
+      const distSq = (r - targetR) ** 2 + (g - targetG) ** 2 + (b - targetB) ** 2;
+
+      if (distSq > tolSq) {
+        labels[i] = -1;
+        continue;
+      }
+
+      let head = 0;
+      let tail = 0;
+      queue[tail++] = i;
+      labels[i] = currLabel;
+      let sz = 0;
+
+      while (head < tail) {
+        const pos = queue[head++];
+        sz++;
+        const cx = pos % width;
+        const cy = Math.floor(pos / width);
+
+        // 4 neighbors
+        if (cx > 0) {
+          const np = pos - 1;
+          if (labels[np] === 0) {
+            const nIdx = np * 4;
+            const ndistSq = (data[nIdx] - targetR) ** 2 + (data[nIdx + 1] - targetG) ** 2 + (data[nIdx + 2] - targetB) ** 2;
+            if (ndistSq <= tolSq) {
+              labels[np] = currLabel;
+              queue[tail++] = np;
+            } else {
+              labels[np] = -1;
+            }
+          }
+        }
+        if (cx < width - 1) {
+          const np = pos + 1;
+          if (labels[np] === 0) {
+            const nIdx = np * 4;
+            const ndistSq = (data[nIdx] - targetR) ** 2 + (data[nIdx + 1] - targetG) ** 2 + (data[nIdx + 2] - targetB) ** 2;
+            if (ndistSq <= tolSq) {
+              labels[np] = currLabel;
+              queue[tail++] = np;
+            } else {
+              labels[np] = -1;
+            }
+          }
+        }
+        if (cy > 0) {
+          const np = pos - width;
+          if (labels[np] === 0) {
+            const nIdx = np * 4;
+            const ndistSq = (data[nIdx] - targetR) ** 2 + (data[nIdx + 1] - targetG) ** 2 + (data[nIdx + 2] - targetB) ** 2;
+            if (ndistSq <= tolSq) {
+              labels[np] = currLabel;
+              queue[tail++] = np;
+            } else {
+              labels[np] = -1;
+            }
+          }
+        }
+        if (cy < height - 1) {
+          const np = pos + width;
+          if (labels[np] === 0) {
+            const nIdx = np * 4;
+            const ndistSq = (data[nIdx] - targetR) ** 2 + (data[nIdx + 1] - targetG) ** 2 + (data[nIdx + 2] - targetB) ** 2;
+            if (ndistSq <= tolSq) {
+              labels[np] = currLabel;
+              queue[tail++] = np;
+            } else {
+              labels[np] = -1;
+            }
+          }
+        }
+      }
+
+      compSizes.set(currLabel, sz);
+      currLabel++;
+    }
+
+    const largeLabels = new Set<number>();
+    for (const [lbl, sz] of compSizes.entries()) {
+      if (sz >= minRegionSize) {
+        largeLabels.add(lbl);
+      }
+    }
+
+    const isLarge = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+      if (largeLabels.has(labels[i])) {
+        isLarge[i] = 1;
+        const idx = i * 4;
+        data[idx] = replaceR;
+        data[idx + 1] = replaceG;
+        data[idx + 2] = replaceB;
+        data[idx + 3] = replaceA;
+      }
+    }
+
+    if (featherVal > 0) {
+      const maxFeatherDist = tol + featherVal;
+      for (let i = 0; i < n; i++) {
+        if (isLarge[i]) continue;
+        const cx = i % width;
+        const cy = Math.floor(i / width);
+
+        const hasLargeNeighbor = 
+          (cx > 0 && isLarge[i - 1]) ||
+          (cx < width - 1 && isLarge[i + 1]) ||
+          (cy > 0 && isLarge[i - width]) ||
+          (cy < height - 1 && isLarge[i + width]);
+
+        if (hasLargeNeighbor) {
+          const idx = i * 4;
+          const r = data[idx];
+          const g = data[idx + 1];
+          const b = data[idx + 2];
+          const dist = Math.sqrt((r - targetR) ** 2 + (g - targetG) ** 2 + (b - targetB) ** 2);
+          if (dist > tol && dist <= maxFeatherDist) {
+            const factor = (dist - tol) / featherVal;
+            if (replaceA === 0) {
+              data[idx + 3] = Math.round(data[idx + 3] * factor);
+            } else {
+              data[idx] = Math.round(replaceR * (1 - factor) + data[idx] * factor);
+              data[idx + 1] = Math.round(replaceG * (1 - factor) + data[idx + 1] * factor);
+              data[idx + 2] = Math.round(replaceB * (1 - factor) + data[idx + 2] * factor);
+              data[idx + 3] = Math.round(replaceA * (1 - factor) + data[idx + 3] * factor);
+            }
+          }
+        }
+      }
+    }
+
+  } else if (mode === 'floodFill') {
+    const visited = new Uint8Array(n);
+    const queue = new Int32Array(n);
+    const points = clickPoints.length > 0 
+      ? clickPoints 
+      : [{ x: options.startX || 0, y: options.startY || 0 }];
+
+    for (const pt of points) {
+      const cx = Math.max(0, Math.min(width - 1, pt.x));
+      const cy = Math.max(0, Math.min(height - 1, pt.y));
+      const startPos = cy * width + cx;
+      if (visited[startPos]) continue;
+
+      let head = 0;
+      let tail = 0;
+      queue[tail++] = startPos;
+      visited[startPos] = 1;
+
+      while (head < tail) {
+        const pos = queue[head++];
+        const x = pos % width;
+        const y = Math.floor(pos / width);
+        const idx = pos * 4;
+
+        const r = data[idx];
+        const g = data[idx + 1];
+        const b = data[idx + 2];
+        const dist = Math.sqrt((r - targetR) ** 2 + (g - targetG) ** 2 + (b - targetB) ** 2);
+
+        if (dist <= tol) {
+          data[idx] = replaceR;
+          data[idx + 1] = replaceG;
+          data[idx + 2] = replaceB;
+          data[idx + 3] = replaceA;
+        } else if (dist <= tol + featherVal && featherVal > 0) {
+          const factor = (dist - tol) / featherVal;
+          if (replaceA === 0) {
+            data[idx + 3] = Math.round(data[idx + 3] * factor);
+          } else {
+            data[idx] = Math.round(replaceR * (1 - factor) + data[idx] * factor);
+            data[idx + 1] = Math.round(replaceG * (1 - factor) + data[idx + 1] * factor);
+            data[idx + 2] = Math.round(replaceB * (1 - factor) + data[idx + 2] * factor);
+            data[idx + 3] = Math.round(replaceA * (1 - factor) + data[idx + 3] * factor);
+          }
+        }
+
+        if (x > 0) {
+          const np = pos - 1;
+          if (!visited[np]) {
+            visited[np] = 1;
+            const nIdx = np * 4;
+            const ndistSq = (data[nIdx] - targetR) ** 2 + (data[nIdx + 1] - targetG) ** 2 + (data[nIdx + 2] - targetB) ** 2;
+            if (ndistSq <= tolSq) queue[tail++] = np;
+          }
+        }
+        if (x < width - 1) {
+          const np = pos + 1;
+          if (!visited[np]) {
+            visited[np] = 1;
+            const nIdx = np * 4;
+            const ndistSq = (data[nIdx] - targetR) ** 2 + (data[nIdx + 1] - targetG) ** 2 + (data[nIdx + 2] - targetB) ** 2;
+            if (ndistSq <= tolSq) queue[tail++] = np;
+          }
+        }
+        if (y > 0) {
+          const np = pos - width;
+          if (!visited[np]) {
+            visited[np] = 1;
+            const nIdx = np * 4;
+            const ndistSq = (data[nIdx] - targetR) ** 2 + (data[nIdx + 1] - targetG) ** 2 + (data[nIdx + 2] - targetB) ** 2;
+            if (ndistSq <= tolSq) queue[tail++] = np;
+          }
+        }
+        if (y < height - 1) {
+          const np = pos + width;
+          if (!visited[np]) {
+            visited[np] = 1;
+            const nIdx = np * 4;
+            const ndistSq = (data[nIdx] - targetR) ** 2 + (data[nIdx + 1] - targetG) ** 2 + (data[nIdx + 2] - targetB) ** 2;
+            if (ndistSq <= tolSq) queue[tail++] = np;
+          }
+        }
+      }
+    }
+  } else {
+    // Global mode
+    const maxFeatherDist = tol + featherVal;
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+
+      const dist = Math.sqrt((r - targetR) ** 2 + (g - targetG) ** 2 + (b - targetB) ** 2);
+      if (dist <= tol) {
+        data[i] = replaceR;
+        data[i + 1] = replaceG;
+        data[i + 2] = replaceB;
+        data[i + 3] = replaceA;
+      } else if (dist <= maxFeatherDist && featherVal > 0) {
+        const factor = (dist - tol) / featherVal;
+        if (replaceA === 0) {
+          data[i + 3] = Math.round(data[i + 3] * factor);
+        } else {
+          data[i] = Math.round(replaceR * (1 - factor) + data[i] * factor);
+          data[i + 1] = Math.round(replaceG * (1 - factor) + data[i + 1] * factor);
+          data[i + 2] = Math.round(replaceB * (1 - factor) + data[i + 2] * factor);
+          data[i + 3] = Math.round(replaceA * (1 - factor) + data[i + 3] * factor);
+        }
+      }
+    }
+  }
 };
 
 // ==========================================
