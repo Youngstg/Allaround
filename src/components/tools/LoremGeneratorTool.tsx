@@ -89,7 +89,10 @@ export const LoremGeneratorTool: React.FC = () => {
               min="1"
               max="50"
               value={count}
-              onChange={(e) => setCount(Math.max(1, Number(e.target.value)))}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                setCount(isNaN(val) ? 1 : Math.min(50, Math.max(1, val)));
+              }}
               style={{
                 width: '100%',
                 padding: '10px 14px',

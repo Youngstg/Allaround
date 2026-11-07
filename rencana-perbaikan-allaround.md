@@ -33,11 +33,11 @@ Kolom **Status**: ☐ belum, 🔄 dikerjakan, ✅ selesai dan terverifikasi.
 
 | # | Perbaikan | Langkah | Usaha | Status |
 |---|---|---|---|---|
-| 10 | **Verifikasi klaim "100% Client-Side Privacy"** | Pantau tab Network saat mengompres PDF dan mengubah gambar: tidak boleh ada berkas yang dikirim ke server atau pihak ketiga. Cek juga domain pihak ketiga (font, analitik). Ini skenario H1, H2, H8, H9 | S | ☐ |
-| 11 | **Jalankan bagian E–I yang belum diuji** | Hitung Kata, QR Code, alat lain (G), privasi/keamanan (H: XSS, berkas berbahaya, batas dan rate limit), teknis/SEO/aksesibilitas (I: Lighthouse, keyboard, browser) | M | ☐ |
-| 12 | **Uji fungsi 19 alat lainnya** | A6 hanya membuktikan semua alat bisa dibuka (24/24), bukan bahwa fungsinya benar. Jalankan templat G (input valid, kosong, ekstrem, keluaran) untuk tiap alat | L | ☐ |
+| 10 | **Verifikasi klaim "100% Client-Side Privacy"** | Pantau tab Network saat mengompres PDF dan mengubah gambar: tidak boleh ada berkas yang dikirim ke server atau pihak ketiga. Cek juga domain pihak ketiga (font, analitik). Ini skenario H1, H2, H8, H9 | S | 🔄 |
+| 11 | **Jalankan bagian E–I yang belum diuji** | Hitung Kata, QR Code, alat lain (G), privasi/keamanan (H: XSS, berkas berbahaya, batas dan rate limit), teknis/SEO/aksesibilitas (I: Lighthouse, keyboard, browser) | M | 🔄 |
+| 12 | **Uji fungsi 19 alat lainnya** | A6 hanya membuktikan semua alat bisa dibuka (24/24), bukan bahwa fungsinya benar. Jalankan templat G (input valid, kosong, ekstrem, keluaran) untuk tiap alat | L | 🔄 |
 | 13 | **Uji di perangkat nyata** | D8 diuji di Chrome headless dengan emulasi viewport. Uji di Android, iPhone Safari (batas kanvas, HEIC), dan HP kelas menengah | M | ☐ |
-| 14 | **Otomasi** | Jalankan skenario inti di CI setiap deploy | M | ☐ |
+| 14 | **Otomasi** | Jalankan skenario inti di CI setiap deploy | M | 🔄 |
 
 ---
 
@@ -70,3 +70,4 @@ Kolom **Status**: ☐ belum, 🔄 dikerjakan, ✅ selesai dan terverifikasi.
 |---|---|---|
 | 7 Nov 2026 | #1, #2, #3 | Branch `fix/fase-0`: Selesai diimplementasikan. Angka kompresi palsu dihapus, validasi PDF & password ditambahkan, Web Worker diintegrasikan. |
 | 7 Nov 2026 | #5, #6, #7, #8, #9 | Branch `fix/fase-1`: Selesai diimplementasikan. Routing URL & history back aktif, empty state pencarian ramah, edge-connected flood fill (anti over-cut), validasi HEIC/non-image, metadata SEO, noscript, dan modal privasi. |
+| 7 Nov 2026 | #10, #11, #12, #14 | Branch `fix/fase-2`: Selesai diimplementasikan. Audit privasi 100% client-side (nol fetch/payload), deteksi kontras & ekspor SVG di QR Generator, validasi input ekstrem di Lorem Generator, penolakan HEIC & non-image di Image Converter, fallback rute 404 ramah, sanitasi XSS terverifikasi, dan 78 unit tests passing. |

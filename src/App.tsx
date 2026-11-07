@@ -37,14 +37,14 @@ const getToolIdFromUrl = (): string | null => {
 
   // 1. Check pathname (e.g. /pdf-compressor or /pdf-compressor/)
   const path = window.location.pathname.replace(/^\/|\/$/g, '').trim();
-  if (path && TOOLS.some(t => t.id === path)) {
+  if (path) {
     return path;
   }
 
   // 2. Fallback check hash (e.g. #/pdf-compressor or #pdf-compressor)
   if (window.location.hash) {
     const hash = window.location.hash.replace(/^#\/?/, '').trim();
-    if (hash && TOOLS.some(t => t.id === hash)) {
+    if (hash) {
       return hash;
     }
   }
@@ -61,7 +61,7 @@ export const App: React.FC = () => {
   const updatePageTitle = useCallback((toolId: string | null) => {
     if (toolId) {
       const tool = TOOLS.find(t => t.id === toolId);
-      document.title = tool ? `${tool.name} — Allaround` : DEFAULT_TITLE;
+      document.title = tool ? `${tool.name} — Allaround` : `Halaman Tidak Ditemukan (404) — Allaround`;
     } else {
       document.title = DEFAULT_TITLE;
     }
@@ -164,6 +164,29 @@ export const App: React.FC = () => {
         return <PomodoroTimerTool />;
 
       default:
+        // Render 404 page if unknown tool route is accessed
+        if (activeToolId && !TOOLS.some(t => t.id === activeToolId)) {
+          return (
+            <div className="animate-fade-in" style={{ textAlign: 'center', padding: '60px 20px', maxWidth: '520px', margin: '0 auto' }}>
+              <div style={{ fontSize: '72px', fontWeight: 900, color: 'var(--brand-primary)', marginBottom: '8px', lineHeight: 1 }}>
+                404
+              </div>
+              <h2 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '12px', color: 'var(--color-text-primary)' }}>
+                Alat Tidak Ditemukan
+              </h2>
+              <p style={{ color: 'var(--color-text-secondary)', marginBottom: '24px', fontSize: '15px', lineHeight: 1.6 }}>
+                Alat dengan ID <code>"{activeToolId}"</code> tidak tersedia atau telah dipindahkan.
+              </p>
+              <button
+                onClick={() => handleSelectTool(null)}
+                className="btn-primary"
+                style={{ padding: '12px 28px', margin: '0 auto', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+              >
+                Kembali ke Beranda
+              </button>
+            </div>
+          );
+        }
         return <Dashboard onSelectTool={handleSelectTool} />;
     }
   };

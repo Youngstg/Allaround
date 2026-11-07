@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UploadCloud, FileType, Download, RefreshCw } from 'lucide-react';
+import { FileType, Download, AlertTriangle, X } from 'lucide-react';
 
 export const ImageConverterTool: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -7,10 +7,35 @@ export const ImageConverterTool: React.FC = () => {
   const [convertedUrl, setConvertedUrl] = useState<string | null>(null);
   const [convertedSize, setConvertedSize] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selected = e.target.files[0];
+      setErrorMessage(null);
+
+      // HEIC validation
+      const isHeic = selected.name.toLowerCase().endsWith('.heic') || selected.name.toLowerCase().endsWith('.heif');
+      if (isHeic) {
+        setErrorMessage(
+          "Format HEIC dari iPhone belum didukung secara langsung di peramban ini. Silakan ubah pengaturan kamera iPhone ke 'Most Compatible' (JPEG) atau gunakan format JPG/PNG/WebP."
+        );
+        setFile(null);
+        e.target.value = '';
+        return;
+      }
+
+      // Non-image validation
+      const isImage = selected.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|svg)$/i.test(selected.name);
+      if (!isImage) {
+        setErrorMessage(
+          `Berkas "${selected.name}" bukan format gambar yang valid. Harap unggah berkas gambar dengan format PNG, JPG, WebP, GIF, atau BMP.`
+        );
+        setFile(null);
+        e.target.value = '';
+        return;
+      }
+
       setFile(selected);
       convertImage(selected, targetFormat);
     }
@@ -18,33 +43,58 @@ export const ImageConverterTool: React.FC = () => {
 
   const convertImage = (imgFile: File, format: string) => {
     setIsProcessing(true);
+    setErrorMessage(null);
+
     const reader = new FileReader();
+    reader.onerror = () => {
+      setIsProcessing(false);
+      setErrorMessage(`Gagal membaca berkas "${imgFile.name}".`);
+    };
+
     reader.onload = (e) => {
       const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        // If converting to JPEG, draw white background first
-        if (format === 'image/jpeg') {
-          ctx.fillStyle = '#FFFFFF';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
-        ctx.drawImage(img, 0, 0);
-        canvas.toBlob((blob) => {
-          if (blob) {
-            setConvertedUrl(URL.createObjectURL(blob));
-            setConvertedSize(blob.size);
-          }
-          setIsProcessing(false);
-        }, format, 0.92);
+      img.onerror = () => {
+        setIsProcessing(false);
+        setErrorMessage(`Gagal memuat gambar "${imgFile.name}". Berkas mungkin rusak atau tidak didukung oleh browser.`);
       };
+
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            setIsProcessing(false);
+            setErrorMessage('Gagal membuat kanvas render untuk gambar.');
+            return;
+          }
+
+          // If converting to JPEG, draw white background first to avoid black transparency
+          if (format === 'image/jpeg') {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              setConvertedUrl(URL.createObjectURL(blob));
+              setConvertedSize(blob.size);
+            } else {
+              setErrorMessage('Gagal mengonversi gambar ke format yang dipilih.');
+            }
+            setIsProcessing(false);
+          }, format, 0.92);
+        } catch (err: any) {
+          setIsProcessing(false);
+          setErrorMessage(`Terjadi kesalahan saat memproses gambar: ${err?.message || 'Error tidak diketahui'}`);
+        }
+      };
+
       img.src = e.target?.result as string;
     };
+
     reader.readAsDataURL(imgFile);
   };
 
@@ -59,6 +109,10 @@ export const ImageConverterTool: React.FC = () => {
     return 'webp';
   };
 
+  const formatSize = (bytes: number) => {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  };
+
   return (
     <div className="animate-fade-in" style={{ maxWidth: '800px', margin: '0 auto' }}>
       <div style={{ marginBottom: '28px', textAlign: 'center' }}>
@@ -66,9 +120,35 @@ export const ImageConverterTool: React.FC = () => {
           Image Converter
         </h1>
         <p style={{ color: 'var(--color-text-secondary)', fontSize: '15px' }}>
-          Konversi format gambar antar PNG, JPG, dan WebP secara instan di peramban.
+          Konversi format gambar antar PNG, JPG, dan WebP secara instan di peramban Anda.
         </p>
       </div>
+
+      {/* Error / Alert Banner */}
+      {errorMessage && (
+        <div style={{
+          background: '#FEF2F2',
+          border: '1px solid #FCA5A5',
+          borderRadius: 'var(--radius-md)',
+          padding: '14px 16px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '12px',
+          color: '#991B1B',
+        }}>
+          <AlertTriangle size={20} style={{ flexShrink: 0, marginTop: '2px', color: '#DC2626' }} />
+          <div style={{ flex: 1, fontSize: '13px', lineHeight: 1.5 }}>
+            {errorMessage}
+          </div>
+          <button
+            onClick={() => setErrorMessage(null)}
+            style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#991B1B', padding: '2px' }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       {!file ? (
         <div style={{
@@ -152,6 +232,12 @@ export const ImageConverterTool: React.FC = () => {
               }}>
                 <img src={convertedUrl} alt="Converted" style={{ maxWidth: '100%', maxHeight: '280px', objectFit: 'contain' }} />
               </div>
+
+              {convertedSize && (
+                <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '16px' }}>
+                  Ukuran Berkas: <strong>{formatSize(convertedSize)}</strong> (dari {formatSize(file.size)})
+                </div>
+              )}
 
               <div style={{ display: 'flex', gap: '12px' }}>
                 <a
