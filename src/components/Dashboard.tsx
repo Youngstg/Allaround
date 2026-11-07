@@ -246,20 +246,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectTool }) => {
                   }}>
                     {ICON_MAP[tool.icon] || <FileText size={22} />}
                   </div>
-
-                  {tool.badge && (
-                    <span style={{
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      padding: '2px 8px',
-                      borderRadius: '100px',
-                      background: 'var(--cat-pdf-light)',
-                      color: 'var(--cat-pdf-dark)',
-                      border: '1px solid var(--cat-pdf-border)',
-                    }}>
-                      {tool.badge}
-                    </span>
-                  )}
                 </div>
 
                 <h3 style={{

@@ -34,3 +34,10 @@ pnpm-debug.log*
 __pycache__/
 *.py[cod]
 *$py.class
+
+# UAT (User Acceptance Testing) - Abaikan berkas uji berat dan evidence
+uat/berkas-uji/
+uat/uat-evidence/
+uat/tests/
+
+
