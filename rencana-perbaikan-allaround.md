@@ -23,11 +23,11 @@ Kolom **Status**: ☐ belum, 🔄 dikerjakan, ✅ selesai dan terverifikasi.
 
 | # | Perbaikan | Temuan | Langkah | Usaha | Status |
 |---|---|---|---|---|---|
-| 5 | **URL per alat dan tombol Back** | A5 | Navigasi memakai `useState(activeToolId)` tanpa routing. Tambahkan routing (path seperti `/pdf-compressor` dengan rewrite di server, atau hash `#/pdf-compressor`) dan gunakan History API agar Back, Refresh, dan tautan langsung berfungsi. Beri title dan deskripsi unik per alat | M | ☐ |
-| 6 | **Empty state pencarian** | A4 | Ganti "HASIL PENCARIAN (0)" dengan pesan ramah: "Alat tidak ditemukan. Coba kata kunci lain" dan tombol hapus pencarian | S | ☐ |
-| 7 | **Pesan error dan petunjuk yang konsisten** | B8, C4, C7, D6 | Ganti `alert()` bawaan browser dengan notifikasi di dalam aplikasi. Tampilkan petunjuk "Tambahkan minimal 1 dokumen lagi" saat hanya 1 berkas di Gabung PDF. Sebut nama berkas bermasalah pada error ("Gagal membaca *nama.pdf*"). Validasi tipe berkas dan tampilkan pesan untuk file bukan gambar | S–M | ☐ |
-| 8 | **Alat Background Changer: nama, perilaku, dan HEIC** | D1, D2, D6 | Alat ini sebenarnya "Photobooth Frame Cutout" berbasis chroma key, bukan penghapus latar berbasis AI. Pilih: (a) ubah nama dan deskripsi di dashboard agar jujur, atau (b) tambahkan penghapus latar AI di browser (misalnya model ONNX/WebAssembly; periksa lisensi pustakanya). Untuk mode "Semua Warna Putih (Global)", hapus hanya area putih yang terhubung ke tepi gambar (flood fill dari tepi) agar label putih di tengah produk tidak ikut bolong. Untuk HEIC, konversi di sisi klien (pustaka seperti `heic2any`; periksa lisensi) atau tolak dengan pesan jelas | M–L | ☐ |
-| 9 | **Metadata, privasi, dan konten tanpa JavaScript** | Temuan awal | Beranda kosong tanpa JavaScript. Lengkapi `og:title`, `og:description`, `og:image`, canonical, `theme-color`, dan pertimbangkan pra-render (SSG) agar tiap alat bisa ditemukan mesin pencari dan pratinjau tautan tidak kosong. Tambahkan Kebijakan Privasi dan Kontak yang menjelaskan bahwa berkas diproses di perangkat (setelah terbukti, lihat #10) | M | ☐ |
+| 5 | **URL per alat dan tombol Back** | A5 | Navigasi memakai `useState(activeToolId)` tanpa routing. Tambahkan routing (path seperti `/pdf-compressor` dengan rewrite di server, atau hash `#/pdf-compressor`) dan gunakan History API agar Back, Refresh, dan tautan langsung berfungsi. Beri title dan deskripsi unik per alat | M | 🔄 |
+| 6 | **Empty state pencarian** | A4 | Ganti "HASIL PENCARIAN (0)" dengan pesan ramah: "Alat tidak ditemukan. Coba kata kunci lain" dan tombol hapus pencarian | S | 🔄 |
+| 7 | **Pesan error dan petunjuk yang konsisten** | B8, C4, C7, D6 | Ganti `alert()` bawaan browser dengan notifikasi di dalam aplikasi. Tampilkan petunjuk "Tambahkan minimal 1 dokumen lagi" saat hanya 1 berkas di Gabung PDF. Sebut nama berkas bermasalah pada error ("Gagal membaca *nama.pdf*"). Validasi tipe berkas dan tampilkan pesan untuk file bukan gambar | S–M | 🔄 |
+| 8 | **Alat Background Changer: nama, perilaku, dan HEIC** | D1, D2, D6 | Alat ini sebenarnya "Photobooth Frame Cutout" berbasis chroma key, bukan penghapus latar berbasis AI. Pilih: (a) ubah nama dan deskripsi di dashboard agar jujur, atau (b) tambahkan penghapus latar AI di browser (misalnya model ONNX/WebAssembly; periksa lisensi pustakanya). Untuk mode "Semua Warna Putih (Global)", hapus hanya area putih yang terhubung ke tepi gambar (flood fill dari tepi) agar label putih di tengah produk tidak ikut bolong. Untuk HEIC, konversi di sisi klien (pustaka seperti `heic2any`; periksa lisensi) atau tolak dengan pesan jelas | M–L | 🔄 |
+| 9 | **Metadata, privasi, dan konten tanpa JavaScript** | Temuan awal | Beranda kosong tanpa JavaScript. Lengkapi `og:title`, `og:description`, `og:image`, canonical, `theme-color`, dan pertimbangkan pra-render (SSG) agar tiap alat bisa ditemukan mesin pencari dan pratinjau tautan tidak kosong. Tambahkan Kebijakan Privasi dan Kontak yang menjelaskan bahwa berkas diproses di perangkat (setelah terbukti, lihat #10) | M | 🔄 |
 
 ### Fase 2: verifikasi dan kelengkapan
 
@@ -68,5 +68,5 @@ Kolom **Status**: ☐ belum, 🔄 dikerjakan, ✅ selesai dan terverifikasi.
 
 | Tanggal | Perbaikan # | Catatan |
 |---|---|---|
-| 7 Nov 2026 | #1, #2, #3 | Branch `fix/fase-0` dibuat. Rencana perbaikan teknis disusun dan menunggu persetujuan user sebelum pengubahan kode. |
-
+| 7 Nov 2026 | #1, #2, #3 | Branch `fix/fase-0`: Selesai diimplementasikan. Angka kompresi palsu dihapus, validasi PDF & password ditambahkan, Web Worker diintegrasikan. |
+| 7 Nov 2026 | #5, #6, #7, #8, #9 | Branch `fix/fase-1`: Selesai diimplementasikan. Routing URL & history back aktif, empty state pencarian ramah, edge-connected flood fill (anti over-cut), validasi HEIC/non-image, metadata SEO, noscript, dan modal privasi. |

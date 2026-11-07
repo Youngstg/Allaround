@@ -109,8 +109,8 @@ export const TOOLS: ToolItem[] = [
   // --- IMAGE TOOLS ---
   {
     id: 'image-bg-changer',
-    name: 'Background Changer',
-    description: 'Ubah background gambar ke warna pastel, transparan (PNG), atau warna kustom.',
+    name: 'Photobooth Cutout & Chroma BG',
+    description: 'Ekstraksi kotak strip foto dan ubah background warna solid ke pastel atau transparan.',
     category: 'image',
     icon: 'Wand2',
     priority: 'MVP',

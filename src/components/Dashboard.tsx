@@ -47,6 +47,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
 
 export const Dashboard: React.FC<DashboardProps> = ({ onSelectTool }) => {
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | 'all'>('all');
+  const [activeModal, setActiveModal] = useState<'privacy' | 'terms' | 'contact' | null>(null);
 
   const filteredTools = TOOLS.filter(tool => {
     return selectedCategory === 'all' || tool.category === selectedCategory;
@@ -283,6 +284,151 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectTool }) => {
           );
         })}
       </div>
+
+      {/* Footer Section: Privacy Guarantee & Quick Links */}
+      <footer style={{
+        marginTop: '48px',
+        padding: '32px 24px',
+        borderRadius: 'var(--radius-lg)',
+        background: 'var(--color-bg-card)',
+        border: '1px solid var(--color-border)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center',
+        gap: '16px',
+      }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '6px 14px',
+          borderRadius: '100px',
+          background: '#ECFDF5',
+          color: '#065F46',
+          fontSize: '12px',
+          fontWeight: 700,
+          border: '1px solid #A7F3D0',
+        }}>
+          <ShieldCheck size={16} />
+          <span>100% Client-Side Privacy Guaranteed</span>
+        </div>
+
+        <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', maxWidth: '640px', lineHeight: 1.6, margin: 0 }}>
+          Semua file dokumen, gambar, dan teks diproses sepenuhnya di browser lokal Anda menggunakan WebAssembly, Web Worker, dan HTML5 Canvas. Berkas Anda tidak pernah diunggah, disimpan, atau ditransmisikan ke server kami maupun pihak ketiga.
+        </p>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap', justifyContent: 'center', fontSize: '13px' }}>
+          <button 
+            type="button" 
+            onClick={() => setActiveModal('privacy')} 
+            style={{ background: 'none', border: 'none', color: 'var(--brand-dark)', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }}
+          >
+            Kebijakan Privasi
+          </button>
+          <span style={{ color: 'var(--color-border)' }}>•</span>
+          <button 
+            type="button" 
+            onClick={() => setActiveModal('terms')} 
+            style={{ background: 'none', border: 'none', color: 'var(--brand-dark)', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }}
+          >
+            Syarat Layanan
+          </button>
+          <span style={{ color: 'var(--color-border)' }}>•</span>
+          <button 
+            type="button" 
+            onClick={() => setActiveModal('contact')} 
+            style={{ background: 'none', border: 'none', color: 'var(--brand-dark)', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }}
+          >
+            Kontak & Dukungan
+          </button>
+        </div>
+
+        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+          © {new Date().getFullYear()} Allaround. Dibuat untuk produktivitas cepat, aman, dan tanpa iklan pelacak.
+        </div>
+      </footer>
+
+      {/* Info Modals */}
+      {activeModal && (
+        <div 
+          onClick={() => setActiveModal(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.4)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            zIndex: 1000,
+          }}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'var(--color-bg-surface)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-lg)',
+              maxWidth: '560px',
+              width: '100%',
+              padding: '28px',
+              boxShadow: 'var(--shadow-lg)',
+              maxHeight: '85vh',
+              overflowY: 'auto',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--color-text-primary)' }}>
+                {activeModal === 'privacy' && 'Kebijakan Privasi Allaround'}
+                {activeModal === 'terms' && 'Syarat & Ketentuan Layanan'}
+                {activeModal === 'contact' && 'Kontak & Dukungan'}
+              </h3>
+              <button 
+                onClick={() => setActiveModal(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: 'var(--color-text-muted)' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+              {activeModal === 'privacy' && (
+                <>
+                  <p><strong>1. Prinsip Privasi Utama:</strong> Kami percaya data Anda adalah hak milik pribadi Anda seutuhnya. Seluruh operasi pengolahan berkas (PDF compression, PDF merge, image editing, text formatting, QR code generation) berjalan 100% pada thread peramban web perangkat lokal Anda.</p>
+                  <p><strong>2. Tidak Ada Pengunggahan Berkas:</strong> Berkas Anda tidak pernah diunggah ke server kami atau cloud pihak ketiga. Tidak ada log penyimpanan dokumen di server.</p>
+                  <p><strong>3. Bebas Iklan & Pelacak:</strong> Kami tidak memasang cookie pelacak lintas situs atau iklan pengintai privasi.</p>
+                </>
+              )}
+              {activeModal === 'terms' && (
+                <>
+                  <p><strong>1. Penggunaan Layanan:</strong> Allaround disediakan secara gratis untuk kebutuhan personal dan profesional. Anda bertanggung jawab penuh atas dokumen yang Anda proses.</p>
+                  <p><strong>2. Batasan Tanggung Jawab:</strong> Layanan disediakan "sebagaimana adanya" tanpa jaminan ketersediaan mutlak, meskipun kami berupaya memastikan seluruh alat bekerja akurat dan bebas bug.</p>
+                </>
+              )}
+              {activeModal === 'contact' && (
+                <>
+                  <p>Jika Anda menemukan kendala teknis, bug, atau ingin memberikan saran fitur baru, Anda dapat menghubungi tim kami melalui:</p>
+                  <p>📧 Email: <a href="mailto:support@allaround.us.ci" style={{ color: 'var(--brand-dark)', fontWeight: 600 }}>support@allaround.us.ci</a></p>
+                  <p>🌐 Repositori: GitHub Allaround Project</p>
+                </>
+              )}
+            </div>
+
+            <div style={{ marginTop: '24px', textAlign: 'right' }}>
+              <button
+                type="button"
+                onClick={() => setActiveModal(null)}
+                className="btn-primary"
+                style={{ padding: '8px 20px', fontSize: '13px' }}
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

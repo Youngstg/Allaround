@@ -709,28 +709,120 @@ export const processBackgroundRemoval = (
       }
     }
   } else {
-    // Global mode
-    const maxFeatherDist = tol + featherVal;
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
+    // Global mode: Edge-connected flood fill from image perimeter
+    // Eliminates over-cut by preserving white text/labels inside objects
+    const visited = new Uint8Array(n);
+    const queue = new Int32Array(n);
+    let head = 0;
+    let tail = 0;
 
-      const dist = Math.sqrt((r - targetR) ** 2 + (g - targetG) ** 2 + (b - targetB) ** 2);
-      if (dist <= tol) {
-        data[i] = replaceR;
-        data[i + 1] = replaceG;
-        data[i + 2] = replaceB;
-        data[i + 3] = replaceA;
-      } else if (dist <= maxFeatherDist && featherVal > 0) {
-        const factor = (dist - tol) / featherVal;
-        if (replaceA === 0) {
-          data[i + 3] = Math.round(data[i + 3] * factor);
-        } else {
-          data[i] = Math.round(replaceR * (1 - factor) + data[i] * factor);
-          data[i + 1] = Math.round(replaceG * (1 - factor) + data[i + 1] * factor);
-          data[i + 2] = Math.round(replaceB * (1 - factor) + data[i + 2] * factor);
-          data[i + 3] = Math.round(replaceA * (1 - factor) + data[i + 3] * factor);
+    const isTarget = (pos: number) => {
+      const idx = pos * 4;
+      const r = data[idx];
+      const g = data[idx + 1];
+      const b = data[idx + 2];
+      return (r - targetR) ** 2 + (g - targetG) ** 2 + (b - targetB) ** 2 <= tolSq;
+    };
+
+    // 1. Seed from top and bottom edges
+    for (let x = 0; x < width; x++) {
+      const topPos = x;
+      if (!visited[topPos] && isTarget(topPos)) {
+        visited[topPos] = 1;
+        queue[tail++] = topPos;
+      }
+      const botPos = (height - 1) * width + x;
+      if (!visited[botPos] && isTarget(botPos)) {
+        visited[botPos] = 1;
+        queue[tail++] = botPos;
+      }
+    }
+
+    // 2. Seed from left and right edges
+    for (let y = 0; y < height; y++) {
+      const leftPos = y * width;
+      if (!visited[leftPos] && isTarget(leftPos)) {
+        visited[leftPos] = 1;
+        queue[tail++] = leftPos;
+      }
+      const rightPos = y * width + (width - 1);
+      if (!visited[rightPos] && isTarget(rightPos)) {
+        visited[rightPos] = 1;
+        queue[tail++] = rightPos;
+      }
+    }
+
+    // 3. Flood fill connected matching region
+    while (head < tail) {
+      const pos = queue[head++];
+      const cx = pos % width;
+      const cy = Math.floor(pos / width);
+
+      if (cx > 0) {
+        const np = pos - 1;
+        if (!visited[np] && isTarget(np)) {
+          visited[np] = 1;
+          queue[tail++] = np;
+        }
+      }
+      if (cx < width - 1) {
+        const np = pos + 1;
+        if (!visited[np] && isTarget(np)) {
+          visited[np] = 1;
+          queue[tail++] = np;
+        }
+      }
+      if (cy > 0) {
+        const np = pos - width;
+        if (!visited[np] && isTarget(np)) {
+          visited[np] = 1;
+          queue[tail++] = np;
+        }
+      }
+      if (cy < height - 1) {
+        const np = pos + width;
+        if (!visited[np] && isTarget(np)) {
+          visited[np] = 1;
+          queue[tail++] = np;
+        }
+      }
+    }
+
+    // 4. Replace pixels and apply feathering
+    const maxFeatherDist = tol + featherVal;
+    for (let i = 0; i < n; i++) {
+      if (visited[i]) {
+        const idx = i * 4;
+        data[idx] = replaceR;
+        data[idx + 1] = replaceG;
+        data[idx + 2] = replaceB;
+        data[idx + 3] = replaceA;
+      } else if (featherVal > 0) {
+        const cx = i % width;
+        const cy = Math.floor(i / width);
+        const hasVisitedNeighbor =
+          (cx > 0 && visited[i - 1]) ||
+          (cx < width - 1 && visited[i + 1]) ||
+          (cy > 0 && visited[i - width]) ||
+          (cy < height - 1 && visited[i + width]);
+
+        if (hasVisitedNeighbor) {
+          const idx = i * 4;
+          const r = data[idx];
+          const g = data[idx + 1];
+          const b = data[idx + 2];
+          const dist = Math.sqrt((r - targetR) ** 2 + (g - targetG) ** 2 + (b - targetB) ** 2);
+          if (dist > tol && dist <= maxFeatherDist) {
+            const factor = (dist - tol) / featherVal;
+            if (replaceA === 0) {
+              data[idx + 3] = Math.round(data[idx + 3] * factor);
+            } else {
+              data[idx] = Math.round(replaceR * (1 - factor) + data[idx] * factor);
+              data[idx + 1] = Math.round(replaceG * (1 - factor) + data[idx + 1] * factor);
+              data[idx + 2] = Math.round(replaceB * (1 - factor) + data[idx + 2] * factor);
+              data[idx + 3] = Math.round(replaceA * (1 - factor) + data[idx + 3] * factor);
+            }
+          }
         }
       }
     }

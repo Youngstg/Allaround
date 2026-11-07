@@ -187,6 +187,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 color: 'var(--color-text-primary)',
               }}
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '2px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: 'var(--color-text-muted)',
+                }}
+                title="Hapus pencarian"
+                aria-label="Hapus pencarian"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -225,30 +244,77 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', fontWeight: 600, padding: '8px 6px' }}>
                 HASIL PENCARIAN ({filteredTools.length})
               </div>
-              {filteredTools.map(tool => (
-                <div
-                  key={tool.id}
-                  onClick={() => { onSelectTool(tool.id); onCloseMobile(); }}
-                  style={{
+              {filteredTools.length === 0 ? (
+                <div style={{
+                  padding: '20px 12px',
+                  textAlign: 'center',
+                  background: 'var(--color-bg-base)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px dashed var(--color-border)',
+                  marginTop: '6px',
+                }}>
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    background: 'var(--color-bg-surface)',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px',
-                    padding: '8px 12px',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    fontWeight: activeToolId === tool.id ? 600 : 400,
-                    color: activeToolId === tool.id ? 'var(--cat-img-dark)' : 'var(--color-text-primary)',
-                    background: activeToolId === tool.id ? 'var(--cat-img-light)' : 'transparent',
-                    marginBottom: '2px',
-                  }}
-                >
-                  {ICON_MAP[tool.icon] || <FileText size={16} />}
-                  <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {tool.name}
-                  </span>
+                    justifyContent: 'center',
+                    margin: '0 auto 10px',
+                    color: 'var(--color-text-muted)',
+                  }}>
+                    <Search size={18} />
+                  </div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '4px' }}>
+                    Alat tidak ditemukan
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-secondary)', marginBottom: '12px', lineHeight: 1.4 }}>
+                    Coba gunakan kata kunci lain (misal: pdf, qr, teks).
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    style={{
+                      background: 'var(--color-bg-surface)',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '5px 12px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      color: 'var(--brand-dark)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Hapus Pencarian
+                  </button>
                 </div>
-              ))}
+              ) : (
+                filteredTools.map(tool => (
+                  <div
+                    key={tool.id}
+                    onClick={() => { onSelectTool(tool.id); onCloseMobile(); }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '8px 12px',
+                      borderRadius: 'var(--radius-sm)',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      fontWeight: activeToolId === tool.id ? 600 : 400,
+                      color: activeToolId === tool.id ? 'var(--cat-img-dark)' : 'var(--color-text-primary)',
+                      background: activeToolId === tool.id ? 'var(--cat-img-light)' : 'transparent',
+                      marginBottom: '2px',
+                    }}
+                  >
+                    {ICON_MAP[tool.icon] || <FileText size={16} />}
+                    <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {tool.name}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           ) : (
             /* Category Accordion View */

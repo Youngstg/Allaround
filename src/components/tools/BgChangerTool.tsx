@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   UploadCloud, Wand2, Download, RefreshCw, Pipette, 
   MousePointerClick, Globe, Sparkles, Check, Undo2, 
-  ShieldCheck, RotateCcw, Camera
+  ShieldCheck, RotateCcw, Camera, AlertCircle
 } from 'lucide-react';
 import { 
   parseTargetColor, rgbToHex, detectCornerColor, 
@@ -26,6 +26,7 @@ type TargetMode = 'white' | 'corner' | 'black' | 'eyedropper' | 'custom';
 export const BgChangerTool: React.FC = () => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   
   // Target color to remove / make transparent (default pure white #FFFFFF)
   const [targetMode, setTargetMode] = useState<TargetMode>('white');
@@ -55,8 +56,25 @@ export const BgChangerTool: React.FC = () => {
 
   // Load image onto internal canvas
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setErrorMessage('');
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      const nameLower = file.name.toLowerCase();
+
+      // 1. Detect HEIC format
+      if (nameLower.endsWith('.heic') || nameLower.endsWith('.heif') || file.type.includes('heic') || file.type.includes('heif')) {
+        setErrorMessage('Format HEIC (kamera iPhone) belum didukung langsung di peramban ini. Silakan gunakan format JPG, PNG, atau WebP.');
+        return;
+      }
+
+      // 2. Validate image mime type / extension
+      const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.svg', '.bmp', '.gif'];
+      const hasValidExt = validExtensions.some(ext => nameLower.endsWith(ext));
+      if (!file.type.startsWith('image/') && !hasValidExt) {
+        setErrorMessage('File ini bukan gambar yang didukung. Silakan pilih berkas gambar JPG, PNG, atau WebP.');
+        return;
+      }
+
       const url = URL.createObjectURL(file);
       const img = new Image();
       img.crossOrigin = 'anonymous';
@@ -66,6 +84,10 @@ export const BgChangerTool: React.FC = () => {
         setImageSrc(url);
         setProcessedUrl(null);
         setClickPoints([]);
+        setErrorMessage('');
+      };
+      img.onerror = () => {
+        setErrorMessage('Gagal memuat berkas gambar. Pastikan format berkas valid.');
       };
       img.src = url;
     }
@@ -307,12 +329,39 @@ export const BgChangerTool: React.FC = () => {
           fontFamily: 'var(--font-heading)', 
           color: 'var(--color-text-primary)' 
         }}>
-          Photobooth Frame Cutout & BG Changer
+          Photobooth Frame Cutout & Chroma BG
         </h1>
         <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', maxWidth: '680px', margin: '0 auto' }}>
-          Algoritma morfologi pintar yang memutus jembatan warna stiker secara otomatis. <strong>Hanya tepat 3 kotak foto yang dilubangi</strong>, sementara garis grid retro dan stiker terlindungi 100%.
+          Ekstraksi kotak foto strip otomatis atau hapus latar warna solid yang terhubung ke tepi luar foto secara presisi.
         </p>
       </div>
+
+      {/* Error Alert Banner */}
+      {errorMessage && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '12px',
+          padding: '14px 18px',
+          borderRadius: 'var(--radius-md)',
+          background: '#FEF2F2',
+          border: '1px solid #FCA5A5',
+          color: '#991B1B',
+          fontSize: '14px',
+          marginBottom: '20px',
+          lineHeight: 1.5,
+        }}>
+          <AlertCircle size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
+          <div style={{ flex: 1, fontWeight: 500 }}>{errorMessage}</div>
+          <button 
+            onClick={() => setErrorMessage('')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#991B1B', fontWeight: 700 }}
+            aria-label="Tutup pesan error"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {!imageSrc ? (
         /* Upload Area */
@@ -621,10 +670,10 @@ export const BgChangerTool: React.FC = () => {
                 <Globe size={20} color="var(--color-text-secondary)" style={{ marginTop: '2px', flexShrink: 0 }} />
                 <div>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-                    Semua Warna Putih (Global)
+                    Hapus Latar Tepi (Anti Over-Cut)
                   </div>
                   <div style={{ fontSize: '11px', color: 'var(--color-text-secondary)', marginTop: '3px', lineHeight: 1.4 }}>
-                    Menghapus seluruh warna putih tanpa batasan area geometris.
+                    Menghapus warna latar yang menyentuh batas luar foto. Label atau teks putih di dalam produk terlindungi 100%.
                   </div>
                 </div>
               </div>
