@@ -1,4 +1,4 @@
-# Allaround — Everyday Productivity Tools 🚀
+# Allaround - Everyday Productivity Tools 🚀
 
 Platform web multi-tool serbaguna berbasis **React 19**, **TypeScript**, dan **Vite 6** dengan antarmuka modern bernuansa warna pastel. Seluruh alat dirancang dengan prinsip **100% Client-Side Privacy**, di mana seluruh berkas (PDF, gambar, dan teks) diproses langsung di peramban lokal pengguna tanpa pernah diunggah ke server mana pun.
 
